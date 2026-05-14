@@ -1,0 +1,16 @@
+README.md
+pyproject.toml
+src/loan_analyzer/__init__.py
+src/loan_analyzer/core.py
+src/loan_analyzer.egg-info/PKG-INFO
+src/loan_analyzer.egg-info/SOURCES.txt
+src/loan_analyzer.egg-info/dependency_links.txt
+src/loan_analyzer.egg-info/requires.txt
+src/loan_analyzer.egg-info/top_level.txt
+src/loan_analyzer/sql/instalment_delinquency_maker.sql
+src/loan_analyzer/sql/recursive_loan_state.sql
+src/loan_analyzer/tests/test_monotonicity.sql
+src/loan_analyzer/tests/test_principal_invariants.sql
+src/loan_analyzer/tests/test_reconciliation.sql
+src/loan_analyzer/tests/test_terminal_states.sql
+src/loan_analyzer/tests/test_uniqueness.sql
