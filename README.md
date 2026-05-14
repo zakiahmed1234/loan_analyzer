@@ -11,8 +11,10 @@ A lightweight, SQL-powered engine for validating loan data and computing analyti
 
 ## Installation
 
+You can install the package directly from GitHub:
+
 ```bash
-pip install .
+pip install git+https://github.com/zakiahmed1234/loan_analyzer.git
 ```
 
 ## Quick Start
@@ -36,3 +38,7 @@ metrics.run_delinquency()
 The package includes internal SQL resources located in:
 - `src/loan_analyzer/sql/`: Core metrics logic.
 - `src/loan_analyzer/tests/`: Validation tests.
+
+## License
+
+MIT
