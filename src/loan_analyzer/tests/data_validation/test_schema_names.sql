@@ -1,0 +1,1 @@
+SELECT count(*) FROM information_schema.tables WHERE table_name IN ('loans', 'actual_payments', 'borrowers');
