@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: loan_analyzer
-Version: 0.1.0
+Version: 0.1.1
 Summary: A comprehensive loan data validation and metrics engine using DuckDB.
 Author-email: Zaki <zaki@example.com>
 Classifier: Programming Language :: Python :: 3
@@ -13,39 +13,133 @@ Requires-Dist: pandas
 
 # Loan Analyzer
 
-A lightweight, SQL-powered engine for validating loan data and computing analytical metrics using DuckDB.
+A lightweight, SQL-powered engine for validating loan data and computing analytical metrics using DuckDB. It is designed to transform raw CSV loan data into auditable, time-series financial states.
 
-## Features
+## Project Structure
 
-- **Schema & Invariant Validation**: Built-in SQL tests for uniqueness, reconciliation, principal tracking, and more.
-- **Recursive State Engine**: Tracks monthly loan balances and interest accruals.
-- **Delinquency Waterfall**: Computes Days Past Due (DPD) and classifies loans into delinquency buckets.
-- **DuckDB Powered**: High-performance vectorized execution on local CSV files.
+The project follows the `src` layout for better packaging and isolation:
+
+```text
+loan_analyzer/
+├── src/
+│   └── loan_analyzer/
+│       ├── loan_system/       # Core Python logic
+│       ├── sql/               # SQL transformations (CTEs, etc.)
+│       └── tests/             # SQL-based validation tests
+├── docs/                      # Documentation
+├── pyproject.toml             # Build configuration
+└── README.md
+```
 
 ## Installation
 
+You can install the package directly from GitHub:
+
 ```bash
-pip install .
+pip install git+https://github.com/zakiahmed1234/loan_analyzer.git
 ```
 
-## Quick Start
+---
+
+## Core API Reference
+
+The API is modularized into specialized classes within the `loan_analyzer` package.
+
+### 1. `DataLoader`
+Handles data ingestion from CSVs into an in-memory DuckDB instance.
+
+#### `__init__(directory_path, connection=None)`
+- **directory_path**: Directory containing the required CSV files.
+- **connection**: (Optional) An existing DuckDB connection. If omitted, a new in-memory connection is created.
+- **Behavior**: Automatically loads all `.csv` files in the directory as tables.
 
 ```python
-from loan_analyzer import LoanDataLoader, LoanMetricsRunner
+from loan_analyzer import DataLoader
+loader = DataLoader("./data/my_loan_batch")
+```
 
-# 1. Load and Validate Data
-loader = LoanDataLoader("path/to/your/csv_data")
-loader.load_data()
-is_valid, report = loader.validate()
+---
 
-# 2. Run Metrics
-metrics = LoanMetricsRunner(loader)
-metrics.run_loan_state()
-metrics.run_delinquency()
+### 2. `DataValidation`
+Runs a suite of SQL-based invariant tests to ensure data integrity.
+
+#### `__init__(loader: DataLoader)`
+Initializes with a populated `DataLoader`.
+
+#### `validate_all()`
+Runs all tests in `src/loan_analyzer/tests/data_validation/`.
+- **Returns**: A pandas DataFrame containing the results (check name, pass/fail, details).
+
+```python
+from loan_analyzer import DataValidation
+validator = DataValidation(loader)
+report = validator.validate_all()
+print(report)
+```
+
+---
+
+### 3. `LoanCalculation`
+The execution engine for financial business logic.
+
+#### `__init__(validator: DataValidation)`
+Initializes the runner with a `DataValidation` instance. It ensures validation has been run before executing calculations.
+
+#### `run_loan_state()`
+Executes the **Recursive Balance Engine**. This calculates monthly snapshots for every loan, tracking interest accrual, payments, and principal amortization.
+```python
+from loan_analyzer import LoanCalculation
+calculator = LoanCalculation(validator)
+calculator.run_loan_state()
+```
+
+#### `run_delinquency()`
+Calculates the **Delinquency Waterfall** (DPD and status classification).
+```python
+calculator.run_delinquency()
+```
+
+---
+
+### 4. `LoanAudit`
+The **Forensic Audit Tool**. Provides a line-item reconciliation of a loan's principal change.
+
+#### `audit_loan(loan_id, as_of_date)`
+Returns a detailed text report reconciling `Opening - Closing == Amortization + Write-offs`.
+```python
+from loan_analyzer import LoanAudit
+auditor = LoanAudit(calculator)
+print(auditor.audit_loan("L-001", "2024-05-15"))
+```
+
+---
+
+## Advanced Usage Example
+
+```python
+from loan_analyzer import DataLoader, DataValidation, LoanCalculation, LoanAudit
+
+# 1. Setup Data Environment (Auto-loads CSVs)
+loader = DataLoader("FakeData/1/")
+
+# 2. Perform Health Check
+validator = DataValidation(loader)
+report = validator.validate_all()
+if not report.passed.all():
+    print("Data issues found!")
+    print(report[report.passed == False])
+
+# 3. Generate Financial Models
+calculator = LoanCalculation(validator)
+calculator.run_all() # Runs both state and delinquency
+
+# 4. Forensic Investigation
+auditor = LoanAudit(calculator)
+print(auditor.audit_loan("3c60c443-a997-4a9c-8948-33fd5301208e", "2023-12-01"))
 ```
 
 ## SQL Resources
+The core logic is modularized in `src/loan_analyzer/sql/`. You can find the recursive CTEs for balance tracking and the cumulative window functions for delinquency there.
 
-The package includes internal SQL resources located in:
-- `src/loan_analyzer/sql/`: Core metrics logic.
-- `src/loan_analyzer/tests/`: Validation tests.
+## License
+MIT
