@@ -54,7 +54,9 @@ WITH RECURSIVE balance_engine AS (
         l.loan_amount::DOUBLE AS opening_principal,
         0.0::DOUBLE AS interest_accrued,
         0.0::DOUBLE AS cash_received,
+        0.0::DOUBLE AS penalty_occurred,
         0.0::DOUBLE AS write_off_occurred,
+        0.0::DOUBLE AS amortization,
         l.loan_amount::DOUBLE AS closing_principal
     FROM loans l
     JOIN loan_calendar c ON l.loan_id = c.loan_id AND c.period_number = 1
@@ -68,7 +70,9 @@ WITH RECURSIVE balance_engine AS (
         b.closing_principal AS opening_principal,
         (b.closing_principal * i.monthly_rate)::DOUBLE AS interest_accrued,
         COALESCE(p.cash_paid, 0.0)::DOUBLE AS cash_received,
+        COALESCE(p.penalty_amt, 0.0)::DOUBLE AS penalty_occurred,
         COALESCE(p.write_off_amt, 0.0)::DOUBLE AS write_off_occurred,
+        GREATEST(COALESCE(p.cash_paid, 0.0) - (b.closing_principal * i.monthly_rate) - COALESCE(p.penalty_amt, 0.0), 0)::DOUBLE AS amortization,
         GREATEST(
             b.closing_principal 
             - GREATEST(COALESCE(p.cash_paid, 0.0) - (b.closing_principal * i.monthly_rate) - COALESCE(p.penalty_amt, 0.0), 0)
