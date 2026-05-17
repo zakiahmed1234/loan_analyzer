@@ -1,6 +1,15 @@
 # Loan Analyzer
 
-A lightweight, SQL-powered engine for validating loan data and computing analytical metrics using DuckDB. It is designed to transform raw CSV loan data into auditable, time-series financial states.
+A lightweight, SQL-powered engine for validating loan data and computing delinquency metrics using DuckDB. It is designed to transform raw CSV loan data into auditable, time-series financial states. The engine takes in 
+
+    - Borrower data
+    - Loan data
+    - collateral data
+    - colateral valuation data
+    - Scheduled payment data
+    - Actual payment data
+
+and calculates how the amount owed over time changes for each loan via complex amortization calculations.
 
 ## Project Structure
 
@@ -28,9 +37,9 @@ pip install git+https://github.com/zakiahmed1234/loan_analyzer.git
 
 ---
 
-## Core API Reference
+## Core Package Reference
 
-The API is modularized into specialized classes within the `loan_analyzer` package.
+The package is modularized into specialized classes within the `loan_analyzer` package.
 
 ### 1. `DataLoader`
 Handles data ingestion from CSVs into an in-memory DuckDB instance.
@@ -48,7 +57,16 @@ loader = DataLoader("./data/my_loan_batch")
 ---
 
 ### 2. `DataValidation`
-Runs a suite of SQL-based invariant tests to ensure data integrity.
+Runs a suite of SQL-based invariant tests to ensure data integrity. Our data should satisfy the following invariants:
+
+    - id uniqueness
+    - correct data types
+    - correct schema names
+    - correct reconciliation (cash_received = interest_paid + principal_paid + fees + penalties + unapplied_cash)
+    - terminal states are absorbing (when a loan defaults or gets paid off or written off it stays as is)
+    - total cash paid never goes down
+    - never a negative amount owed
+    - payment date >= origination date
 
 #### `__init__(loader: DataLoader)`
 Initializes with a populated `DataLoader`.
