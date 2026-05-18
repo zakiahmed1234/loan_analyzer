@@ -90,19 +90,15 @@ class BaseMetrics:
         # 4. Execute the fully rendered, injection-safe SQL query string
         df = self.con.execute(query).df()
 
-        # Define Hive-style path structure: {category}_metrics/{metric_name}/lender_id={lender_id}/date={date}
-        today = datetime.date.today().isoformat()
-        metric_folder = f"{self.category_name}_metrics"
-        output_dir = Path(output_base_dir) / metric_folder / metric_name / f"lender_id={self.lender_id}" / f"date={today}"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        
-        if output_format.lower() == "csv":
-            output_file = output_dir / "data.csv"
-            df.to_csv(output_file, index=False)
-        else:
-            output_file = output_dir / "data.parquet"
-            df.to_parquet(output_file, index=False)
-            
-        print(f"✅ Metric '{metric_name}' computed and saved to {output_file}")
+        # Save using the centralized utility
+        from ..utils.hive_saver import save_hive_partitioned
+        save_hive_partitioned(
+            df=df,
+            base_dir=output_base_dir,
+            category=f"{self.category_name}_metrics",
+            item_name=metric_name,
+            lender_id=self.lender_id,
+            output_format=output_format
+        )
         
         return df
