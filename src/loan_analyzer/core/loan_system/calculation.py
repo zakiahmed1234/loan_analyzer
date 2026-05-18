@@ -9,7 +9,7 @@ class LoanCalculation:
     def __init__(self, validator: DataValidation):
         self.validator = validator
         self.con = validator.con
-        self.sql_path = Path(__file__).parent.parent / "sql"
+        self.sql_path = Path(__file__).parent / ".." / "sql"
 
     def _ensure_validated(self):
         """

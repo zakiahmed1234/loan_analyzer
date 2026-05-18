@@ -9,7 +9,7 @@ class DataValidation:
     def __init__(self, loader: DataLoader):
         self.loader = loader
         self.con = loader.get_connection()
-        self.tests_path = Path(__file__).parent.parent / "tests" / "data_validation"
+        self.tests_path = Path(__file__).parent / ".." / "tests" / "data_validation"
         self._setup_validation_table()
 
     def _setup_validation_table(self):

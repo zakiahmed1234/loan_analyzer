@@ -10,8 +10,8 @@ class LoanAudit:
     def __init__(self, calculation: LoanCalculation):
         self.calculation = calculation
         self.con = calculation.con
-        self.tests_path = Path(__file__).parent.parent / "tests" / "calculation_validation"
-        self.sql_path = Path(__file__).parent.parent / "sql"
+        self.tests_path = Path(__file__).parent / ".." / "tests" / "calculation_validation"
+        self.sql_path = Path(__file__).parent / ".." / "sql"
 
     def validate_calculations(self):
         """

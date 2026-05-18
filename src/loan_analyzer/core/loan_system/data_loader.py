@@ -1,22 +1,43 @@
 import duckdb
 import os
+import uuid
 from pathlib import Path
 
 class DataLoader:
     """
     Loads CSV files from a directory into DuckDB tables.
     """
-    def __init__(self, directory_path: str, connection: duckdb.DuckDBPyConnection = None):
+    REQUIRED_FILES = [
+        "actual_payments.csv",
+        "borrowers.csv",
+        "collateral_valuation.csv",
+        "collateral.csv",
+        "lender.csv",
+        "loans.csv",
+        "scheduled_repayments.csv"
+    ]
+
+    def __init__(self, directory_path: str, connection: duckdb.DuckDBPyConnection = None, lender_id: str = None):
         self.directory_path = Path(directory_path)
         self.con = connection if connection else duckdb.connect(database=':memory:')
+        self.lender_id = lender_id if lender_id else f"LENDER_ID_{uuid.uuid4().hex[:8]}"
         self._load_csv_files()
 
     def _load_csv_files(self):
         """
         Iterates through the directory and creates tables for each CSV file.
+        Enforces that all required files are present.
         """
         if not self.directory_path.exists():
             raise FileNotFoundError(f"Directory {self.directory_path} does not exist.")
+
+        missing_files = []
+        for req_file in self.REQUIRED_FILES:
+            if not (self.directory_path / req_file).exists():
+                missing_files.append(req_file)
+        
+        if missing_files:
+            raise FileNotFoundError(f"Missing required CSV files in {self.directory_path}: {', '.join(missing_files)}")
 
         for file in self.directory_path.glob("*.csv"):
             table_name = file.stem

@@ -12,17 +12,19 @@ except ImportError as e:
     print(f"Error: Could not import loan_analyzer components. {e}")
     sys.exit(1)
 
-def run_pipeline(data_dir: str):
+def run_pipeline(data_dir: str, lender_id: str = None):
     """
     Orchestrates the loan analysis pipeline.
     """
     print(f"🚀 Starting Loan Analysis Pipeline for: {data_dir}")
+    if lender_id:
+        print(f"Lender ID: {lender_id}")
     print("-" * 50)
 
     try:
         # 1. Load Data
         print("📥 Phase 1: Data Ingestion")
-        loader = DataLoader(data_dir)
+        loader = DataLoader(data_dir, lender_id=lender_id)
         
         # 2. Validate Data
         print("\n🔍 Phase 2: Data Validation")
@@ -62,6 +64,7 @@ def run_pipeline(data_dir: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Loan Analyzer Orchestrator")
     parser.add_argument("data_dir", help="Directory containing loan CSV files")
+    parser.add_argument("--lender-id", help="Optional lender identifier")
     
     args = parser.parse_args()
     
@@ -69,4 +72,4 @@ if __name__ == "__main__":
         print(f"Error: {args.data_dir} is not a valid directory.")
         sys.exit(1)
         
-    run_pipeline(args.data_dir)
+    run_pipeline(args.data_dir, args.lender_id)
