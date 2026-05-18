@@ -1,6 +1,7 @@
 import duckdb
 from pathlib import Path
 from .validation import DataValidation
+from ...utils.hive_saver import save_hive_partitioned
 
 class LoanCalculation:
     """
@@ -10,6 +11,8 @@ class LoanCalculation:
         self.validator = validator
         self.con = validator.con
         self.sql_path = Path(__file__).parent / ".." / "sql"
+        self.lender_id = validator.loader.lender_id
+        self.output_base_dir = getattr(validator.loader, 'output_base_dir', '.')
 
     def _ensure_validated(self):
         """
@@ -44,6 +47,16 @@ class LoanCalculation:
             print("Calculating recursive loan state...")
             self.con.execute(query)
             print("✅ Loan state calculated successfully.")
+            
+            # Save to Hive
+            df = self.con.execute("SELECT * FROM loan_state").df()
+            save_hive_partitioned(
+                df=df,
+                base_dir=self.output_base_dir,
+                category="core_computations",
+                item_name="loan_state",
+                lender_id=self.lender_id
+            )
         except Exception as e:
             raise RuntimeError(f"Failed to calculate loan state: {e}")
 
@@ -63,6 +76,16 @@ class LoanCalculation:
             clean_query = query.strip().rstrip(';')
             self.con.execute(f"CREATE OR REPLACE TABLE instalment_delinquency AS SELECT *, CURRENT_TIMESTAMP AS computed_at FROM ({clean_query})")
             print("✅ Delinquency metrics calculated successfully.")
+            
+            # Save to Hive
+            df = self.con.execute("SELECT * FROM instalment_delinquency").df()
+            save_hive_partitioned(
+                df=df,
+                base_dir=self.output_base_dir,
+                category="core_computations",
+                item_name="instalment_delinquency",
+                lender_id=self.lender_id
+            )
         except Exception as e:
             raise RuntimeError(f"Failed to calculate delinquency: {e}")
 

@@ -2,6 +2,7 @@ import duckdb
 import os
 import uuid
 from pathlib import Path
+from ...utils.hive_saver import save_hive_partitioned
 
 class DataLoader:
     """
@@ -17,11 +18,13 @@ class DataLoader:
         "scheduled_repayments.csv"
     ]
 
-    def __init__(self, directory_path: str, connection: duckdb.DuckDBPyConnection = None, lender_id: str = None):
+    def __init__(self, directory_path: str, connection: duckdb.DuckDBPyConnection = None, lender_id: str = None, output_base_dir: str = "."):
         self.directory_path = Path(directory_path)
         self.con = connection if connection else duckdb.connect(database=':memory:')
         self.lender_id = lender_id if lender_id else f"LENDER_ID_{uuid.uuid4().hex[:8]}"
+        self.output_base_dir = output_base_dir
         self._load_csv_files()
+        self.save_to_hive()
 
     def _load_csv_files(self):
         """
@@ -73,3 +76,22 @@ class DataLoader:
 
     def get_connection(self):
         return self.con
+
+    def save_to_hive(self):
+        """
+        Archives all loaded tables into Hive-partitioned format for auditability.
+        """
+        print(f"\n--- Archiving Input CSVs to Hive (Audit Log) ---")
+        tables = self.con.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'main'").fetchall()
+        for (table_name,) in tables:
+            if table_name == 'validation_results':
+                continue
+            
+            df = self.con.execute(f"SELECT * FROM {table_name}").df()
+            save_hive_partitioned(
+                df=df,
+                base_dir=self.output_base_dir,
+                category="raw_inputs",
+                item_name=table_name,
+                lender_id=self.lender_id
+            )

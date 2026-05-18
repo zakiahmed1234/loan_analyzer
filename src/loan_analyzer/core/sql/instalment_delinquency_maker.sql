@@ -49,9 +49,15 @@ fully_paid_dates AS (
 
 SELECT
     f.loan_id,
+    l.lender_id,
     f.scheduled_instalment_date,
     ls.closing_principal,
     f.real_payment_date,
+
+    -- PARTITIONS
+    EXTRACT(YEAR FROM CAST(f.scheduled_instalment_date AS DATE))::INTEGER AS year,
+    EXTRACT(MONTH FROM CAST(f.scheduled_instalment_date AS DATE))::INTEGER AS month,
+    EXTRACT(DAY FROM CAST(f.scheduled_instalment_date AS DATE))::INTEGER AS day,
 
     -- DELINQUENCY FLAGS
     CASE 
