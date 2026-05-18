@@ -18,11 +18,12 @@ class DataLoader:
         "scheduled_repayments.csv"
     ]
 
-    def __init__(self, directory_path: str, connection: duckdb.DuckDBPyConnection = None, lender_id: str = None, output_base_dir: str = "."):
+    def __init__(self, directory_path: str, connection: duckdb.DuckDBPyConnection = None, lender_id: str = None, output_base_dir: str = ".", output_format: str = "csv"):
         self.directory_path = Path(directory_path)
         self.con = connection if connection else duckdb.connect(database=':memory:')
         self.lender_id = lender_id if lender_id else f"LENDER_ID_{uuid.uuid4().hex[:8]}"
         self.output_base_dir = output_base_dir
+        self.output_format = output_format
         self._load_csv_files()
         self.save_to_hive()
 
@@ -93,5 +94,6 @@ class DataLoader:
                 base_dir=self.output_base_dir,
                 category="raw_inputs",
                 item_name=table_name,
-                lender_id=self.lender_id
+                lender_id=self.lender_id,
+                output_format=self.output_format
             )

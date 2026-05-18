@@ -73,11 +73,24 @@ The `reconciliation_gap` is the most important field for an auditor.
 
 ---
 
+### Automated Calculation Validation
+Beyond individual loan investigation, the system includes a batch validator that runs invariant tests across the entire dataset after the balance engine has completed.
+
+```python
+auditor = LoanAudit(calculator)
+passed, report = auditor.validate_calculations()
+```
+The `validate_calculations()` method executes tests in `src/loan_analyzer/core/tests/calculation_validation/` such as:
+- `test_sum_reconciliation.sql`: Ensuring the sum of interest, principal, and penalties equals the total cash received globally.
+- `test_global_principal_drift.sql`: Ensuring no principal is "lost" or "created" across all recursive steps.
+
+---
+
 ## 4. Technical Implementation
 
 The auditability is powered by two main SQL components:
 
-1.  **`recursive_loan_state.sql`**: This script acts as the "General Ledger". It processes transactions chronologically, ensuring that interest and penalties are satisfied before any principal is amortized.
-2.  **`audit_loan.sql`**: This script acts as the "Auditor". It pulls a specific slice from the ledger and performs the cross-check calculation in real-time.
+1.  **`recursive_loan_state.sql`**: Located in `src/loan_analyzer/core/sql/`. This script acts as the "General Ledger". It processes transactions chronologically, ensuring that interest and penalties are satisfied before any principal is amortized.
+2.  **`audit_loan.sql`**: Located in `src/loan_analyzer/core/sql/`. This script acts as the "Auditor". It pulls a specific slice from the ledger and performs the cross-check calculation in real-time.
 
 By keeping these in SQL, we ensure that the audit logic is vectorized, high-performance, and easily verifiable by anyone with SQL knowledge, independent of the Python wrapper.

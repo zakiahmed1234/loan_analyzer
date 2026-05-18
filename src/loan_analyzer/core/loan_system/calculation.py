@@ -7,12 +7,13 @@ class LoanCalculation:
     """
     Executes financial calculations and metrics after ensuring data validity.
     """
-    def __init__(self, validator: DataValidation):
+    def __init__(self, validator: DataValidation, output_format: str = "csv"):
         self.validator = validator
         self.con = validator.con
         self.sql_path = Path(__file__).parent / ".." / "sql"
         self.lender_id = validator.loader.lender_id
         self.output_base_dir = getattr(validator.loader, 'output_base_dir', '.')
+        self.output_format = output_format
 
     def _ensure_validated(self):
         """
@@ -55,7 +56,8 @@ class LoanCalculation:
                 base_dir=self.output_base_dir,
                 category="core_computations",
                 item_name="loan_state",
-                lender_id=self.lender_id
+                lender_id=self.lender_id,
+                output_format=self.output_format
             )
         except Exception as e:
             raise RuntimeError(f"Failed to calculate loan state: {e}")
@@ -84,7 +86,8 @@ class LoanCalculation:
                 base_dir=self.output_base_dir,
                 category="core_computations",
                 item_name="instalment_delinquency",
-                lender_id=self.lender_id
+                lender_id=self.lender_id,
+                output_format=self.output_format
             )
         except Exception as e:
             raise RuntimeError(f"Failed to calculate delinquency: {e}")

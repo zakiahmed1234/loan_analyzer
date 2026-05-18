@@ -14,11 +14,11 @@ from loan_analyzer import DataLoader
 import duckdb
 
 # Recommended: Automatic in-memory connection
-loader = DataLoader("path/to/csvs")
+loader = DataLoader("path/to/csvs", output_format="csv")
 
 # Advanced: Use an existing persistent DuckDB file
 con = duckdb.connect("my_audit_database.db")
-loader = DataLoader("path/to/csvs", connection=con)
+loader = DataLoader("path/to/csvs", connection=con, output_format="parquet")
 ```
 
 ### Behavior
@@ -36,13 +36,14 @@ The `DataValidation` class executes the validation engine to ensure the input da
 ### Methods
 
 #### `validate_all()`
-Iterates through all `test_*.sql` files in the `src/loan_analyzer/tests/data_validation/` directory.
+Iterates through all `test_*.sql` files in the `src/loan_analyzer/core/tests/data_validation/` directory.
 - **Returns**: A pandas DataFrame containing the results.
 - **Built-in Checks**:
     - `test_uniqueness.sql`: No duplicate primary keys.
     - `test_principal_invariants.sql`: Principal never goes below zero or increases without cause.
     - `test_reconciliation.sql`: Payment components sum to the total payment.
     - `test_terminal_states.sql`: Loans marked as 'Paid Off' have a zero balance.
+    - `test_cash_monotonicity.sql`: Total cash received never decreases.
 
 ```python
 from loan_analyzer import DataValidation
@@ -60,7 +61,7 @@ The `LoanCalculation` implements the core financial logic using SQL transformati
 
 #### `run_loan_state()`
 Computes the recursive monthly state for every loan. This is the foundation for all other metrics.
-- **Logic**: Uses a Recursive Common Table Expression (CTE) to calculate month-over-month balances.
+- **Logic**: Uses a Recursive Common Table Expression (CTE) located in `src/loan_analyzer/core/sql/recursive_loan_state.sql`.
 - **Columns in Output Table (`loan_state`)**:
     - `opening_principal`: Balance at start of month.
     - `interest_accrued`: Monthly interest based on the loan's rate.
@@ -81,7 +82,33 @@ Convenience method to run both `run_loan_state()` and `run_delinquency()` in seq
 
 ---
 
-## 4. Forensic Investigation: `LoanAudit`
+## 4. Multi-Dimensional Analytics: Metrics Runners
+
+The system includes specialized runners for high-level analytics. Each runner follows a consistent interface.
+
+### Available Runners
+- **`RiskMetrics`**: Focuses on default rates, delinquency status distributions, and Loss Given Default (LGD).
+- **`CreditMetrics`**: Analyzes credit profiles, score progression over time, and credit grade transitions.
+- **`ImpactMetrics`**: Tracks the social impact, including loan use categories and borrower demographic shifts.
+- **`PricingMetrics`**: Evaluates the yield curve, interest vintages, and pricing vs. risk correlations.
+
+### Usage Pattern
+```python
+from loan_analyzer import RiskMetrics
+
+# Initialize with the calculator (which holds the computed states)
+risk_runner = RiskMetrics(calculator)
+
+# Check available metrics in this category
+print(risk_runner.registry)
+
+# Run a specific metric and save to Hive-style directory
+risk_runner.run_metric("defaults", output_base_dir="analytics", output_format="csv")
+```
+
+---
+
+## 5. Forensic Investigation: `LoanAudit`
 
 The `LoanAudit` class provides auditing tools for the calculated loan states.
 
@@ -119,32 +146,43 @@ print(report)
 
 ---
 
-## 5. Full Integration Example
+## 6. Full Integration Example
 
 ```python
 import os
-from loan_analyzer import DataLoader, DataValidation, LoanCalculation, LoanAudit
+from loan_analyzer import (
+    DataLoader, 
+    DataValidation, 
+    LoanCalculation, 
+    LoanAudit,
+    RiskMetrics
+)
 
-def generate_monthly_report(data_folder):
-    # 1. Load (Auto-loads CSVs)
-    loader = DataLoader(data_folder)
+def generate_monthly_report(data_folder, lender_id="LENDER_001", output_format="csv"):
+    # 1. Load (Auto-loads CSVs and archives to Hive)
+    loader = DataLoader(data_folder, lender_id=lender_id, output_format=output_format)
     
     # 2. Validate
     validator = DataValidation(loader)
     report = validator.validate_all()
     if not report.passed.all():
         failed_checks = report[report.passed == False].check_name.tolist()
-        raise ValueError(f"Integrity check failed: {failed_checks}")
+        print(f"Integrity check failed: {failed_checks}")
         
     # 3. Compute
-    calculator = LoanCalculation(validator)
+    calculator = LoanCalculation(validator, output_format=output_format)
     calculator.run_all()
     
     # 4. Forensic Audit for Verification
     auditor = LoanAudit(calculator)
-    sample_id = loader.con.execute("SELECT loan_id FROM loans LIMIT 1").fetchone()[0]
-    print(auditor.audit_loan(sample_id, "2024-01-01"))
+    audit_passed, audit_report = auditor.validate_calculations()
+    if audit_passed:
+        print("✅ Calculation logic verified and reconciled.")
+    
+    # 5. Run Analytics
+    risk_runner = RiskMetrics(calculator)
+    risk_runner.run_metric("defaults", output_base_dir="analytics", output_format=output_format)
 
 # Run for a specific batch
-generate_monthly_report("FakeData/2")
+generate_monthly_report("FakeData/robust", "LENDER_GOLD_001", "csv")
 ```
