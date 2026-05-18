@@ -60,7 +60,8 @@ class LoanCalculation:
         try:
             print("Calculating delinquency metrics...")
             # Note: The SQL file typically creates a table or view
-            self.con.execute(f"CREATE OR REPLACE TABLE instalment_delinquency AS {query}")
+            clean_query = query.strip().rstrip(';')
+            self.con.execute(f"CREATE OR REPLACE TABLE instalment_delinquency AS SELECT *, CURRENT_TIMESTAMP AS computed_at FROM ({clean_query})")
             print("✅ Delinquency metrics calculated successfully.")
         except Exception as e:
             raise RuntimeError(f"Failed to calculate delinquency: {e}")

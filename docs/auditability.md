@@ -33,13 +33,27 @@ The `audit_loan.sql` script (orchestrated via `LoanAudit.audit_loan()`) exposes 
 | `write_off_occurred` | Principal reduction due to write-off events. | Double |
 | `closing_principal` | The balance after all events are processed. | Double |
 | **`reconciliation_gap`** | **The proof of integrity. Must be 0.00.** | Double |
+| **`computed_at`** | **Timestamp indicating exactly when the state was calculated.** | Timestamp |
 
 ---
 
 ## 3. How to Conduct an Audit
 
+### Full Loan History Audit
+To retrieve the entire history of a loan with all calculated statistics (including DPD and delinquency categories), use the `get_loan_audit` method:
+
+```python
+# Returns a DataFrame of the entire loan history
+history = auditor.get_loan_audit("L001")
+
+# Or get a specific month's data
+jan_audit = auditor.get_loan_audit("L001", "2024-01-01")
+```
+
+The resulting data includes all `loan_state` columns joined with delinquency metrics from the `instalment_delinquency` table.
+
 ### Forensic Investigation
-If a borrower disputes their balance, you can query the system for the exact state on a specific date:
+If a borrower disputes their balance, you can query the system for the exact state on a specific date in a human-readable format:
 
 ```python
 from loan_analyzer import LoanAudit

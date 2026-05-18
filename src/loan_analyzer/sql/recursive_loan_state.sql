@@ -85,4 +85,4 @@ WITH RECURSIVE balance_engine AS (
     LEFT JOIN transactions_by_period p ON b.loan_id = p.loan_id AND c.period_start = p.period_start
     WHERE b.closing_principal > 0.01 
 )
-SELECT * FROM balance_engine;
+SELECT *, CURRENT_TIMESTAMP AS computed_at FROM balance_engine;

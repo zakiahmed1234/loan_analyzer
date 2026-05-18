@@ -84,3 +84,33 @@ class LoanAudit:
 
         except Exception as e:
             return f"Error performing audit: {e}"
+
+    def get_loan_audit(self, loan_id: str, period_start: str = None):
+        """
+        Retrieves full history or a specific month's audit data for a loan.
+        Includes all stats from loan_state and delinquency metrics.
+        """
+        query = """
+        SELECT 
+            ls.*,
+            id.days_past_due,
+            id.dpd_category,
+            id.scheduled_instalment_date,
+            id.real_payment_date,
+            id.flag_write_off_this_month,
+            id.flag_prepayment_this_month
+        FROM loan_state ls
+        LEFT JOIN instalment_delinquency id 
+            ON ls.loan_id = id.loan_id 
+            AND date_trunc('month', CAST(ls.period_start AS DATE)) = date_trunc('month', CAST(id.scheduled_instalment_date AS DATE))
+        WHERE ls.loan_id = ?
+        """
+        params = [loan_id]
+        
+        if period_start:
+            query += " AND ls.period_start = ?"
+            params.append(period_start)
+            
+        query += " ORDER BY ls.period_start ASC"
+        
+        return self.con.execute(query, params).df()

@@ -67,12 +67,14 @@ Computes the recursive monthly state for every loan. This is the foundation for 
     - `cash_received`: Total payments received in the period.
     - `amortization`: Portion of cash applied to principal.
     - `closing_principal`: Balance at end of month.
+    - `computed_at`: Timestamp of when the record was generated.
 
 #### `run_delinquency()`
 Calculates the delinquency status for every scheduled repayment.
 - **Logic**: Window functions calculate the "cumulative paid" vs "cumulative due" to find the exact date an instalment was satisfied.
 - **Output Table**: `instalment_delinquency`
 - **Categories**: `current`, `dpd 1-29`, `dpd 30-59`, `dpd 60-89`, `dpd 90+`, `paid off`, `written off`.
+- **Metadata**: Includes a `computed_at` timestamp.
 
 #### `run_all()`
 Convenience method to run both `run_loan_state()` and `run_delinquency()` in sequence.
@@ -93,9 +95,24 @@ Provides a human-readable reconciliation report for a specific loan and date.
     `Gap = (Opening - Closing) - (Amortization + Write-offs)`.
     A successful audit returns a gap of `0.00`.
 
+#### `get_loan_audit(loan_id, period_start=None)`
+Retrieves a detailed pandas DataFrame containing the full audited history or a specific month's data.
+- **Data Joined**: Combines `loan_state` (financials) with `instalment_delinquency` (DPD, categories, payment flags).
+- **Parameters**:
+    - `loan_id`: The ID of the loan to audit.
+    - `period_start` (Optional): ISO date string (e.g., `'2024-01-01'`) for a single month's audit.
+
 ```python
 from loan_analyzer import LoanAudit
 auditor = LoanAudit(calculator)
+
+# 1. Full Audit History
+history_df = auditor.get_loan_audit("LOAN-123")
+
+# 2. Monthly Detailed Audit
+jan_audit_df = auditor.get_loan_audit("LOAN-123", "2024-01-01")
+
+# 3. Human-Readable Forensic Report
 report = auditor.audit_loan("LOAN-123", "2023-12-01")
 print(report)
 ```
