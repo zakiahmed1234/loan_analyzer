@@ -11,17 +11,27 @@ SELECT
 FROM loans l
 JOIN borrowers b ON l.borrower_id = b.borrower_id
 WHERE
-    l.lender_id = ${lender_id}
-    AND b.lender_id = ${lender_id}
+    l.lender_id = $lender_id
+    AND b.lender_id = $lender_id
     AND (
-        l.year > ${start_year} OR
-        (l.year = ${start_year} AND l.month > ${start_month}) OR
-        (l.year = ${start_year} AND l.month = ${start_month} AND l.day >= ${start_day})
+        l.year > $start_year OR
+        (l.year = $start_year AND l.month > $start_month) OR
+        (l.year = $start_year AND l.month = $start_month AND l.day >= $start_day)
     )
     AND (
-        l.year < ${end_year} OR
-        (l.year = ${end_year} AND l.month < ${end_month}) OR
-        (l.year = ${end_year} AND l.month = ${end_month} AND l.day <= ${end_day})
+        l.year < $end_year OR
+        (l.year = $end_year AND l.month < $end_month) OR
+        (l.year = $end_year AND l.month = $end_month AND l.day <= $end_day)
+    )
+    AND (
+        b.year > $start_year OR
+        (b.year = $start_year AND b.month > $start_month) OR
+        (b.year = $start_year AND b.month = $start_month AND b.day >= $start_day)
+    )
+    AND (
+        b.year < $end_year OR
+        (b.year = $end_year AND b.month < $end_month) OR
+        (b.year = $end_year AND b.month = $end_month AND b.day <= $end_day)
     )
 -- We only look at 'Approved' or 'Disbursed' loans to ensure we're measuring actual impact
 GROUP BY 1, 2, 3

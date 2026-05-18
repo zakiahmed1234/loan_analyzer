@@ -60,9 +60,9 @@ WITH latest_collateral_valuation AS (
         CAST(valuation_date AS DATE) as valuation_date_dt,
         ROW_NUMBER() OVER (PARTITION BY collateral_id ORDER BY CAST(valuation_date AS DATE) DESC) as recent_rank
     FROM collateral_valuation
-    WHERE lender_id = ${lender_id}
-      AND (year, month, day) BETWEEN (${start_year}, ${start_month}, ${start_day})
-                              AND (${end_year}, ${end_month}, ${end_day})
+    WHERE lender_id = $lender_id
+      AND (year, month, day) BETWEEN ($start_year, $start_month, $start_day)
+                              AND ($end_year, $end_month, $end_day)
 ),
 latest_loan_state AS (
     SELECT 
@@ -95,13 +95,14 @@ JOIN latest_loan_state ls
     AND ls.latest_rank = 1
 LEFT JOIN collateral c
     ON l.loan_id = c.loan_id
-    AND c.lender_id = ${lender_id}
+    AND c.lender_id = $lender_id
+    AND (c.year, c.month, c.day) BETWEEN ($start_year, $start_month, $start_day) AND ($end_year, $end_month, $end_day)
 LEFT JOIN latest_collateral_valuation cv
     ON c.collateral_id = cv.collateral_id
     AND cv.recent_rank = 1
 WHERE
-    l.lender_id = ${lender_id}
-    AND (l.year, l.month, l.day) BETWEEN (${start_year}, ${start_month}, ${start_day}) AND (${end_year}, ${end_month}, ${end_day})
+    l.lender_id = $lender_id
+    AND (l.year, l.month, l.day) BETWEEN ($start_year, $start_month, $start_day) AND ($end_year, $end_month, $end_day)
     AND LOWER(l.loan_status) LIKE '%default%'
 -- Shorthand sorting
 ORDER BY 8 DESC;

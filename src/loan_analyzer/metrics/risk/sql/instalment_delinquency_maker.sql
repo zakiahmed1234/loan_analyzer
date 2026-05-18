@@ -96,16 +96,16 @@ WITH sched_base AS (
             COALESCE(scheduled_vat, 0) 
         AS DOUBLE) AS scheduled_amount
     FROM scheduled_repayments
-    WHERE lender_id = ${lender_id}  -- Force static equality here
+    WHERE lender_id = $lender_id  -- Force static equality here
         AND (
-            (year > ${start_year}) OR 
-            (year = ${start_year} AND month > ${start_month}) OR 
-            (year = ${start_year} AND month = ${start_month} AND day >= ${start_day})
+            (year > $start_year) OR 
+            (year = $start_year AND month > $start_month) OR 
+            (year = $start_year AND month = $start_month AND day >= $start_day)
         )
         AND (
-            (year < ${end_year}) OR 
-            (year = ${end_year} AND month < ${end_month}) OR 
-            (year = ${end_year} AND month = ${end_month} AND day <= ${end_day})
+            (year < $end_year) OR 
+            (year = $end_year AND month < $end_month) OR 
+            (year = $end_year AND month = $end_month AND day <= $end_day)
         )
 ),
 
@@ -125,17 +125,17 @@ cumulative_pays AS (
         CAST(actual_total_amount AS DOUBLE) AS actual_total_amount,
         SUM(CAST(actual_total_amount AS DOUBLE)) OVER (PARTITION BY loan_id ORDER BY actual_payment_date) AS cumulative_paid
     FROM actual_payments
-    WHERE lender_id = ${lender_id} -- Force static equality here
+    WHERE lender_id = $lender_id -- Force static equality here
         AND CAST(actual_total_amount AS DOUBLE) > 0 
         AND (
-            (year > ${start_year}) OR 
-            (year = ${start_year} AND month > ${start_month}) OR 
-            (year = ${start_year} AND month = ${start_month} AND day >= ${start_day})
+            (year > $start_year) OR 
+            (year = $start_year AND month > $start_month) OR 
+            (year = $start_year AND month = $start_month AND day >= $start_day)
         )
         AND (
-            (year < ${end_year}) OR 
-            (year = ${end_year} AND month < ${end_month}) OR 
-            (year = ${end_year} AND month = ${end_month} AND day <= ${end_day})
+            (year < $end_year) OR 
+            (year = $end_year AND month < $end_month) OR 
+            (year = $end_year AND month = $end_month AND day <= $end_day)
         )
 ),
 
@@ -191,30 +191,30 @@ FROM fully_paid_dates f
 -- Explicitly filter the LOANS table inside a subquery to satisfy Partition Projection
 JOIN (
     SELECT * FROM loans 
-    WHERE lender_id = ${lender_id}
+    WHERE lender_id = $lender_id
     AND (
-        (year > ${start_year}) OR 
-        (year = ${start_year} AND month > ${start_month}) OR 
-        (year = ${start_year} AND month = ${start_month} AND day >= ${start_day})
+        (year > $start_year) OR 
+        (year = $start_year AND month > $start_month) OR 
+        (year = $start_year AND month = $start_month AND day >= $start_day)
     )
     AND (
-        (year < ${end_year}) OR 
-        (year = ${end_year} AND month < ${end_month}) OR 
-        (year = ${end_year} AND month = ${end_month} AND day <= ${end_day})
+        (year < $end_year) OR 
+        (year = $end_year AND month < $end_month) OR 
+        (year = $end_year AND month = $end_month AND day <= $end_day)
     )
 ) l ON f.loan_id = l.loan_id
 LEFT JOIN (
     SELECT * FROM loan_state 
-    WHERE lender_id = ${lender_id}
+    WHERE lender_id = $lender_id
     AND (
-        (year > ${start_year}) OR 
-        (year = ${start_year} AND month > ${start_month}) OR 
-        (year = ${start_year} AND month = ${start_month} AND day >= ${start_day})
+        (year > $start_year) OR 
+        (year = $start_year AND month > $start_month) OR 
+        (year = $start_year AND month = $start_month AND day >= $start_day)
     )
     AND (
-        (year < ${end_year}) OR 
-        (year = ${end_year} AND month < ${end_month}) OR 
-        (year = ${end_year} AND month = ${end_month} AND day <= ${end_day})
+        (year < $end_year) OR 
+        (year = $end_year AND month < $end_month) OR 
+        (year = $end_year AND month = $end_month AND day <= $end_day)
     )
 ) ls
     ON f.loan_id = ls.loan_id

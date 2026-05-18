@@ -26,17 +26,17 @@ SELECT
     SUM(loan_amount) AS total_principal_volume,
     COUNT(loan_id) AS loan_count
 FROM
-    (SELECT * FROM loans WHERE lender_id = ${lender_id})
+    (SELECT * FROM loans WHERE lender_id = $lender_id)
 WHERE
       (
-          year > ${start_year} OR
-          (year = ${start_year} AND month > ${start_month}) OR
-          (year = ${start_year} AND month = ${start_month} AND day >= ${start_day})
+          year > $start_year OR
+          (year = $start_year AND month > $start_month) OR
+          (year = $start_year AND month = $start_month AND day >= $start_day)
       )
       AND (
-          year < ${end_year} OR
-          (year = ${end_year} AND month < ${end_month}) OR
-          (year = ${end_year} AND month = ${end_month} AND day <= ${end_day})
+          year < $end_year OR
+          (year = $end_year AND month < $end_month) OR
+          (year = $end_year AND month = $end_month AND day <= $end_day)
       )
 GROUP BY 
     1, 2

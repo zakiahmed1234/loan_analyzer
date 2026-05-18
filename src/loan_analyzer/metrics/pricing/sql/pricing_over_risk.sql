@@ -34,16 +34,16 @@ WITH monthly_totals AS (
         SUM(loan_amount) AS total_monthly_volume
     FROM loans
     WHERE
-        lender_id = ${lender_id}
+        lender_id = $lender_id
         AND (
-            year > ${start_year} OR
-            (year = ${start_year} AND month > ${start_month}) OR
-            (year = ${start_year} AND month = ${start_month} AND day >= ${start_day})
+            year > $start_year OR
+            (year = $start_year AND month > $start_month) OR
+            (year = $start_year AND month = $start_month AND day >= $start_day)
         )
         AND (
-            year < ${end_year} OR
-            (year = ${end_year} AND month < ${end_month}) OR
-            (year = ${end_year} AND month = ${end_month} AND day <= ${end_day})
+            year < $end_year OR
+            (year = $end_year AND month < $end_month) OR
+            (year = $end_year AND month = $end_month AND day <= $end_day)
         )
     GROUP BY 1
 )
@@ -64,16 +64,16 @@ FROM (
     SELECT *, DATE_TRUNC('month', CAST(origination_date AS DATE)) AS origination_month
     FROM loans
     WHERE
-        lender_id = ${lender_id}
+        lender_id = $lender_id
         AND (
-            year > ${start_year} OR
-            (year = ${start_year} AND month > ${start_month}) OR
-            (year = ${start_year} AND month = ${start_month} AND day >= ${start_day})
+            year > $start_year OR
+            (year = $start_year AND month > $start_month) OR
+            (year = $start_year AND month = $start_month AND day >= $start_day)
         )
         AND (
-            year < ${end_year} OR
-            (year = ${end_year} AND month < ${end_month}) OR
-            (year = ${end_year} AND month = ${end_month} AND day <= ${end_day})
+            year < $end_year OR
+            (year = $end_year AND month < $end_month) OR
+            (year = $end_year AND month = $end_month AND day <= $end_day)
         )
 ) l
 JOIN monthly_totals m ON l.origination_month = m.origination_month

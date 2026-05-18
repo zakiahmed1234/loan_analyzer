@@ -10,16 +10,16 @@ SELECT
     ROUND(AVG(loan_amount), 2) as avg_loan_size
 FROM loans
 WHERE
-    lender_id = ${lender_id}
+    lender_id = $lender_id
     AND (
-        year > ${start_year} OR
-        (year = ${start_year} AND month > ${start_month}) OR
-        (year = ${start_year} AND month = ${start_month} AND day >= ${start_day})
+        year > $start_year OR
+        (year = $start_year AND month > $start_month) OR
+        (year = $start_year AND month = $start_month AND day >= $start_day)
     )
     AND (
-        year < ${end_year} OR
-        (year = ${end_year} AND month < ${end_month}) OR
-        (year = ${end_year} AND month = ${end_month} AND day <= ${end_day})
+        year < $end_year OR
+        (year = $end_year AND month < $end_month) OR
+        (year = $end_year AND month = $end_month AND day <= $end_day)
     )
 GROUP BY 1
 ORDER BY disbursement_month DESC;

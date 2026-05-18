@@ -18,16 +18,16 @@ WITH RankedLoans AS (
     -- Explicitly filter the LOANS table inside a subquery to satisfy Partition Projection
     FROM (
         SELECT * FROM loans 
-        WHERE lender_id = ${lender_id} -- Force static equality (Python provides quotes)
+        WHERE lender_id = $lender_id -- Force static equality (Python provides quotes)
         AND (
-            (year > ${start_year}) OR 
-            (year = ${start_year} AND month > ${start_month}) OR 
-            (year = ${start_year} AND month = ${start_month} AND day >= ${start_day})
+            (year > $start_year) OR 
+            (year = $start_year AND month > $start_month) OR 
+            (year = $start_year AND month = $start_month AND day >= $start_day)
         )
         AND (
-            (year < ${end_year}) OR 
-            (year = ${end_year} AND month < ${end_month}) OR 
-            (year = ${end_year} AND month = ${end_month} AND day <= ${end_day})
+            (year < $end_year) OR 
+            (year = $end_year AND month < $end_month) OR 
+            (year = $end_year AND month = $end_month AND day <= $end_day)
         )
     ) l 
 ),

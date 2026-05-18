@@ -24,18 +24,18 @@ WITH MonthlyStates AS (
     FROM instalment_delinquency id
     JOIN loans l ON id.loan_id = l.loan_id
     WHERE
-        l.lender_id = ${lender_id}
+        l.lender_id = $lender_id
         -- We only filter on 'l' (loans) because 'id' is already pre-filtered 
         -- and doesn't contain these column names in its schema.
         AND (
-            l.year > ${start_year} OR
-            (l.year = ${start_year} AND l.month > ${start_month}) OR
-            (l.year = ${start_year} AND l.month = ${start_month} AND l.day >= ${start_day})
+            l.year > $start_year OR
+            (l.year = $start_year AND l.month > $start_month) OR
+            (l.year = $start_year AND l.month = $start_month AND l.day >= $start_day)
         )
         AND (
-            l.year < ${end_year} OR
-            (l.year = ${end_year} AND l.month < ${end_month}) OR
-            (l.year = ${end_year} AND l.month = ${end_month} AND l.day <= ${end_day})
+            l.year < $end_year OR
+            (l.year = $end_year AND l.month < $end_month) OR
+            (l.year = $end_year AND l.month = $end_month AND l.day <= $end_day)
         )
 ),
 Transitions AS (

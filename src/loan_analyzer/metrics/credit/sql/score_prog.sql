@@ -17,16 +17,16 @@ FROM loans
 -- Ensuring we only average records that actually have scores
 WHERE credit_bureau_score IS NOT NULL
   AND internal_score IS NOT NULL
-  AND lender_id = ${lender_id}
+  AND lender_id = $lender_id
   AND (
-      year > ${start_year} OR
-      (year = ${start_year} AND month > ${start_month}) OR
-      (year = ${start_year} AND month = ${start_month} AND day >= ${start_day})
+      year > $start_year OR
+      (year = $start_year AND month > $start_month) OR
+      (year = $start_year AND month = $start_month AND day >= $start_day)
   )
   AND (
-      year < ${end_year} OR
-      (year = ${end_year} AND month < ${end_month}) OR
-      (year = ${end_year} AND month = ${end_month} AND day <= ${end_day})
+      year < $end_year OR
+      (year = $end_year AND month < $end_month) OR
+      (year = $end_year AND month = $end_month AND day <= $end_day)
   )
 GROUP BY 1
 ORDER BY 1 DESC;

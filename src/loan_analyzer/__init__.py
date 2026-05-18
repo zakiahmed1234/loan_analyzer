@@ -3,3 +3,7 @@ from .core.loan_system.validation import DataValidation
 from .core.loan_system.calculation import LoanCalculation
 from .core.loan_system.audit import LoanAudit
 from .core.loan_system.graphs import ChartFactory
+from .metrics.risk.runner import RiskMetrics
+from .metrics.impact.runner import ImpactMetrics
+from .metrics.credit.runner import CreditMetrics
+from .metrics.pricing.runner import PricingMetrics

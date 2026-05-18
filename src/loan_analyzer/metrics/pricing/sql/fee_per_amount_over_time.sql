@@ -22,17 +22,17 @@ SELECT
     -- The Sigma Orig Fee / Sigma Loan Amount calculation
     100.0 * SUM(origination_fee_amount) / NULLIF(SUM(loan_amount), 0) AS fee_yield_ratio_pct
 FROM
-    (SELECT * FROM loans WHERE lender_id = ${lender_id})
+    (SELECT * FROM loans WHERE lender_id = $lender_id)
 WHERE
       (
-          year > ${start_year} OR
-          (year = ${start_year} AND month > ${start_month}) OR
-          (year = ${start_year} AND month = ${start_month} AND day >= ${start_day})
+          year > $start_year OR
+          (year = $start_year AND month > $start_month) OR
+          (year = $start_year AND month = $start_month AND day >= $start_day)
       )
       AND (
-          year < ${end_year} OR
-          (year = ${end_year} AND month < ${end_month}) OR
-          (year = ${end_year} AND month = ${end_month} AND day <= ${end_day})
+          year < $end_year OR
+          (year = $end_year AND month < $end_month) OR
+          (year = $end_year AND month = $end_month AND day <= $end_day)
       )
 GROUP BY 
     1

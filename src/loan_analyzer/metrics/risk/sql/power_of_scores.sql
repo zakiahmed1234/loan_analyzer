@@ -60,17 +60,17 @@ WITH score_performance AS (
     FROM loans l
     JOIN instalment_delinquency id ON l.loan_id = id.loan_id
     WHERE
-        l.lender_id = ${lender_id}
+        l.lender_id = $lender_id
         -- REMOVED: id.lender_id and id.year/month/day checks
         AND (
-            l.year > ${start_year} OR
-            (l.year = ${start_year} AND l.month > ${start_month}) OR
-            (l.year = ${start_year} AND l.month = ${start_month} AND l.day >= ${start_day})
+            l.year > $start_year OR
+            (l.year = $start_year AND l.month > $start_month) OR
+            (l.year = $start_year AND l.month = $start_month AND l.day >= $start_day)
         )
         AND (
-            l.year < ${end_year} OR
-            (l.year = ${end_year} AND l.month < ${end_month}) OR
-            (l.year = ${end_year} AND l.month = ${end_month} AND l.day <= ${end_day})
+            l.year < $end_year OR
+            (l.year = $end_year AND l.month < $end_month) OR
+            (l.year = $end_year AND l.month = $end_month AND l.day <= $end_day)
         )
         -- We usually evaluate "Power of Scores" at a specific maturity (e.g., MOB 6 or 12)
         -- or across all historical data available.

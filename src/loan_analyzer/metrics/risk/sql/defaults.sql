@@ -39,31 +39,31 @@ LEFT JOIN (
         loan_id,
         MAX(CAST(actual_payment_date AS DATE)) AS last_pay
     FROM actual_payments
-    WHERE lender_id = ${lender_id}
+    WHERE lender_id = $lender_id
         AND (
-            year > ${start_year} OR
-            (year = ${start_year} AND month > ${start_month}) OR
-            (year = ${start_year} AND month = ${start_month} AND day >= ${start_day})
+            year > $start_year OR
+            (year = $start_year AND month > $start_month) OR
+            (year = $start_year AND month = $start_month AND day >= $start_day)
         )
         AND (
-            year < ${end_year} OR
-            (year = ${end_year} AND month < ${end_month}) OR
-            (year = ${end_year} AND month = ${end_month} AND day <= ${end_day})
+            year < $end_year OR
+            (year = $end_year AND month < $end_month) OR
+            (year = $end_year AND month = $end_month AND day <= $end_day)
         )
     GROUP BY 1
 ) ap ON l.loan_id = ap.loan_id
 -- Standard Presto/Athena v2 Case-Insensitive Filter
 WHERE
-    l.lender_id = ${lender_id}
+    l.lender_id = $lender_id
     AND LOWER(l.loan_status) LIKE '%default%'
     AND (
-        l.year > ${start_year} OR
-        (l.year = ${start_year} AND l.month > ${start_month}) OR
-        (l.year = ${start_year} AND l.month = ${start_month} AND l.day >= ${start_day})
+        l.year > $start_year OR
+        (l.year = $start_year AND l.month > $start_month) OR
+        (l.year = $start_year AND l.month = $start_month AND l.day >= $start_day)
     )
     AND (
-        l.year < ${end_year} OR
-        (l.year = ${end_year} AND l.month < ${end_month}) OR
-        (l.year = ${end_year} AND l.month = ${end_month} AND l.day <= ${end_day})
+        l.year < $end_year OR
+        (l.year = $end_year AND l.month < $end_month) OR
+        (l.year = $end_year AND l.month = $end_month AND l.day <= $end_day)
     )
 ORDER BY 4 ASC;

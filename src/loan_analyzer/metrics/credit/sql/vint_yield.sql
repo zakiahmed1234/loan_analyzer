@@ -15,27 +15,27 @@ WITH yield_metrics AS (
     FROM loans l
     JOIN loan_state ls ON l.loan_id = ls.loan_id
     WHERE
-        l.lender_id = ${lender_id}
-        AND ls.lender_id = ${lender_id}
+        l.lender_id = $lender_id
+        AND ls.lender_id = $lender_id
         AND (
-            l.year > ${start_year} OR
-            (l.year = ${start_year} AND l.month > ${start_month}) OR
-            (l.year = ${start_year} AND l.month = ${start_month} AND l.day >= ${start_day})
+            l.year > $start_year OR
+            (l.year = $start_year AND l.month > $start_month) OR
+            (l.year = $start_year AND l.month = $start_month AND l.day >= $start_day)
         )
         AND (
-            l.year < ${end_year} OR
-            (l.year = ${end_year} AND l.month < ${end_month}) OR
-            (l.year = ${end_year} AND l.month = ${end_month} AND l.day <= ${end_day})
+            l.year < $end_year OR
+            (l.year = $end_year AND l.month < $end_month) OR
+            (l.year = $end_year AND l.month = $end_month AND l.day <= $end_day)
         )
         AND (
-            ls.year > ${start_year} OR
-            (ls.year = ${start_year} AND ls.month > ${start_month}) OR
-            (ls.year = ${start_year} AND ls.month = ${start_month} AND ls.day >= ${start_day})
+            ls.year > $start_year OR
+            (ls.year = $start_year AND ls.month > $start_month) OR
+            (ls.year = $start_year AND ls.month = $start_month AND ls.day >= $start_day)
         )
         AND (
-            ls.year < ${end_year} OR
-            (ls.year = ${end_year} AND ls.month < ${end_month}) OR
-            (ls.year = ${end_year} AND ls.month = ${end_month} AND ls.day <= ${end_day})
+            ls.year < $end_year OR
+            (ls.year = $end_year AND ls.month < $end_month) OR
+            (ls.year = $end_year AND ls.month = $end_month AND ls.day <= $end_day)
         )
 )
 SELECT

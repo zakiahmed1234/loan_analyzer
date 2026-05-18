@@ -43,6 +43,14 @@ class DataLoader:
             table_name = file.stem
             print(f"Loading {file.name} into table '{table_name}'...")
             self.con.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_csv_auto('{file}')")
+            
+            # Ensure lender_id column exists for metric filtering
+            columns = self.con.execute(f"PRAGMA table_info('{table_name}')").fetchall()
+            column_names = [col[1] for col in columns]
+            if 'lender_id' not in column_names:
+                print(f"Injecting lender_id '{self.lender_id}' into table '{table_name}'...")
+                self.con.execute(f"ALTER TABLE {table_name} ADD COLUMN lender_id VARCHAR")
+                self.con.execute(f"UPDATE {table_name} SET lender_id = ?", [self.lender_id])
 
     def get_connection(self):
         return self.con

@@ -1,8 +1,9 @@
 /* in this we deduce the status distrubtion over vintage. In particular, for a specific origination month, we record the first 12 months, and for every month we list all loans along with their respective status. We then range over origination month */
 
 WITH mob_series AS (
-    SELECT range as mob
-    FROM range(0, 13)
+    -- In Athena, UNNEST must be in the FROM clause
+    SELECT mob
+    FROM UNNEST(sequence(0, 12)) AS t(mob)
 ),
 
 loan_base AS (
@@ -12,20 +13,20 @@ loan_base AS (
         CAST(DATE_TRUNC('month', CAST(l.origination_date AS DATE)) AS DATE) AS vintage,
         l.loan_status AS current_final_status,
         m.mob,
-        CAST(CAST(l.origination_date AS DATE) + (m.mob * INTERVAL '1 month') AS DATE) AS observation_month
+        CAST(date_add('month', m.mob, CAST(l.origination_date AS DATE)) AS DATE) AS observation_month
     FROM loans l
-    CROSS JOIN mob_series m
+    CROSS JOIN mob_series m -- Moved UP before the WHERE clause
     WHERE
-        l.lender_id = ${lender_id}
+        l.lender_id = $lender_id
         AND (
-            l.year > ${start_year} OR
-            (l.year = ${start_year} AND l.month > ${start_month}) OR
-            (l.year = ${start_year} AND l.month = ${start_month} AND l.day >= ${start_day})
+            l.year > $start_year OR
+            (l.year = $start_year AND l.month > $start_month) OR
+            (l.year = $start_year AND l.month = $start_month AND l.day >= $start_day)
         )
         AND (
-            l.year < ${end_year} OR
-            (l.year = ${end_year} AND l.month < ${end_month}) OR
-            (l.year = ${end_year} AND l.month = ${end_month} AND l.day <= ${end_day})
+            l.year < $end_year OR
+            (l.year = $end_year AND l.month < $end_month) OR
+            (l.year = $end_year AND l.month = $end_month AND l.day <= $end_day)
         )
 ),
 
@@ -34,16 +35,16 @@ payment_summary AS (
         loan_id, 
         MAX(CAST(actual_payment_date AS DATE)) AS last_pay_date
     FROM actual_payments
-    WHERE lender_id = ${lender_id}
+    WHERE lender_id = $lender_id
           AND (
-              year > ${start_year} OR
-              (year = ${start_year} AND month > ${start_month}) OR
-              (year = ${start_year} AND month = ${start_month} AND day >= ${start_day})
+              year > $start_year OR
+              (year = $start_year AND month > $start_month) OR
+              (year = $start_year AND month = $start_month AND day >= $start_day)
           )
           AND (
-              year < ${end_year} OR
-              (year = ${end_year} AND month < ${end_month}) OR
-              (year = ${end_year} AND month = ${end_month} AND day <= ${end_day})
+              year < $end_year OR
+              (year = $end_year AND month < $end_month) OR
+              (year = $end_year AND month = $end_month AND day <= $end_day)
           )
     GROUP BY 1
 )
@@ -59,7 +60,7 @@ SELECT
              AND b.observation_month > p.last_pay_date THEN 'PaidOff'
         
         WHEN b.current_final_status = 'Defaulted' 
-             AND b.observation_month >= CAST(p.last_pay_date AS DATE) + INTERVAL '3 months' THEN 'Defaulted'
+             AND b.observation_month >= date_add('month', 3, p.last_pay_date) THEN 'Defaulted'
         
         ELSE 'Active'
     END AS status_at_mob
