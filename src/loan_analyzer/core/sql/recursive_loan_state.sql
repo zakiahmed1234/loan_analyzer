@@ -1,6 +1,7 @@
 /* 
 SIMPLIFIED recursive_loan_state.sql
 DuckDB optimized, removed lender-specific and partition logic.
+Now includes lender_id and date partitions for metrics compatibility.
 */
 
 -- 1️⃣ Build monthly loan calendar
@@ -17,8 +18,12 @@ months AS (
 )
 SELECT
     l.loan_id,
+    l.lender_id,
     m.period_start_ts::DATE as period_start,
     (m.period_start_ts + INTERVAL '1 month')::DATE AS period_end,
+    EXTRACT(YEAR FROM m.period_start_ts::DATE)::INTEGER as year,
+    EXTRACT(MONTH FROM m.period_start_ts::DATE)::INTEGER as month,
+    EXTRACT(DAY FROM m.period_start_ts::DATE)::INTEGER as day,
     ROW_NUMBER() OVER (PARTITION BY l.loan_id ORDER BY m.period_start_ts) AS period_number
 FROM loans l
 JOIN months m ON m.period_start_ts::DATE >= DATE_TRUNC('month', CAST(l.origination_date AS DATE))::DATE
@@ -49,6 +54,10 @@ CREATE OR REPLACE TABLE loan_state AS
 WITH RECURSIVE balance_engine AS (
     SELECT
         l.loan_id,
+        l.lender_id,
+        c.year,
+        c.month,
+        c.day,
         c.period_number,
         c.period_start,
         l.loan_amount::DOUBLE AS opening_principal,
@@ -65,6 +74,10 @@ WITH RECURSIVE balance_engine AS (
 
     SELECT
         b.loan_id,
+        b.lender_id,
+        c.year,
+        c.month,
+        c.day,
         c.period_number,
         c.period_start,
         b.closing_principal AS opening_principal,

@@ -19,11 +19,17 @@ class BaseMetrics:
         # Path to the specific metric category's SQL folder
         self.sql_base_path = Path(__file__).parent / category_name / "sql"
 
-    def run_metric(self, metric_name, output_base_dir=".", dialect="duckdb"):
+    def run_metric(self, metric_name, output_base_dir=".", dialect="duckdb", output_format="parquet"):
         """
         Runs a specific metric and saves the result.
         Uses sqlglot to parse into an AST, securely maps parameters using stable 
         type-safe Literal expressions, and transpiles to the target engine dialect.
+        
+        Args:
+            metric_name (str): The name of the metric in the registry.
+            output_base_dir (str): Root directory for saving results.
+            dialect (str): The SQL dialect to transpile to (default: duckdb).
+            output_format (str): 'parquet' or 'csv' (default: parquet).
         """
         if metric_name not in self.registry:
             raise ValueError(f"Metric '{metric_name}' not found in {self.category_name} metrics registry.")
@@ -48,6 +54,7 @@ class BaseMetrics:
 
         # 1. Standardize variable formats ($name or ${name} -> :name) 
         # This guarantees that the core Trino parser reads them cleanly as placeholders
+        import re
         processed_query = re.sub(r'\$\{(\w+)\}', r':\1', raw_query)
         processed_query = re.sub(r'\$(\w+)', r':\1', processed_query)
 
@@ -89,8 +96,13 @@ class BaseMetrics:
         output_dir = Path(output_base_dir) / metric_folder / metric_name / f"lender_id={self.lender_id}" / f"date={today}"
         output_dir.mkdir(parents=True, exist_ok=True)
         
-        output_file = output_dir / "data.parquet"
-        df.to_parquet(output_file, index=False)
+        if output_format.lower() == "csv":
+            output_file = output_dir / "data.csv"
+            df.to_csv(output_file, index=False)
+        else:
+            output_file = output_dir / "data.parquet"
+            df.to_parquet(output_file, index=False)
+            
         print(f"✅ Metric '{metric_name}' computed and saved to {output_file}")
         
         return df

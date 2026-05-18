@@ -54,10 +54,10 @@ class DataLoader:
             
             # Inject year, month, day partitions if date columns exist
             date_col = None
-            if 'origination_date' in column_names:
-                date_col = 'origination_date'
-            elif 'actual_payment_date' in column_names:
-                date_col = 'actual_payment_date'
+            for candidate in ['origination_date', 'actual_payment_date', 'scheduled_instalment_date', 'signup_month', 'valuation_date']:
+                if candidate in column_names:
+                    date_col = candidate
+                    break
             
             if date_col:
                 print(f"Injecting year, month, day partitions from {date_col} into table '{table_name}'...")

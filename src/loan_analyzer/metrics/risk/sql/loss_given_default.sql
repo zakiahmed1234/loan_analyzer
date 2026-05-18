@@ -61,8 +61,15 @@ WITH latest_collateral_valuation AS (
         ROW_NUMBER() OVER (PARTITION BY collateral_id ORDER BY CAST(valuation_date AS DATE) DESC) as recent_rank
     FROM collateral_valuation
     WHERE lender_id = $lender_id
-      AND (year, month, day) BETWEEN ($start_year, $start_month, $start_day)
-                              AND ($end_year, $end_month, $end_day)
+      AND (
+          (year > $start_year) OR 
+          (year = $start_year AND month > $start_month) OR 
+          (year = $start_year AND month = $start_month AND day >= $start_day)
+      ) AND (
+          (year < $end_year) OR 
+          (year = $end_year AND month < $end_month) OR 
+          (year = $end_year AND month = $end_month AND day <= $end_day)
+      )
 ),
 latest_loan_state AS (
     SELECT 
@@ -96,13 +103,29 @@ JOIN latest_loan_state ls
 LEFT JOIN collateral c
     ON l.loan_id = c.loan_id
     AND c.lender_id = $lender_id
-    AND (c.year, c.month, c.day) BETWEEN ($start_year, $start_month, $start_day) AND ($end_year, $end_month, $end_day)
+    AND (
+        (c.year > $start_year) OR 
+        (c.year = $start_year AND c.month > $start_month) OR 
+        (c.year = $start_year AND c.month = $start_month AND c.day >= $start_day)
+    ) AND (
+        (c.year < $end_year) OR 
+        (c.year = $end_year AND c.month < $end_month) OR 
+        (c.year = $end_year AND c.month = $end_month AND c.day <= $end_day)
+    )
 LEFT JOIN latest_collateral_valuation cv
     ON c.collateral_id = cv.collateral_id
     AND cv.recent_rank = 1
 WHERE
     l.lender_id = $lender_id
-    AND (l.year, l.month, l.day) BETWEEN ($start_year, $start_month, $start_day) AND ($end_year, $end_month, $end_day)
+    AND (
+        (l.year > $start_year) OR 
+        (l.year = $start_year AND l.month > $start_month) OR 
+        (l.year = $start_year AND l.month = $start_month AND l.day >= $start_day)
+    ) AND (
+        (l.year < $end_year) OR 
+        (l.year = $end_year AND l.month < $end_month) OR 
+        (l.year = $end_year AND l.month = $end_month AND l.day <= $end_day)
+    )
     AND LOWER(l.loan_status) LIKE '%default%'
 -- Shorthand sorting
 ORDER BY 8 DESC;
