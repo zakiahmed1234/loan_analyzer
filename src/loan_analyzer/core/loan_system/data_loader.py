@@ -51,6 +51,25 @@ class DataLoader:
                 print(f"Injecting lender_id '{self.lender_id}' into table '{table_name}'...")
                 self.con.execute(f"ALTER TABLE {table_name} ADD COLUMN lender_id VARCHAR")
                 self.con.execute(f"UPDATE {table_name} SET lender_id = ?", [self.lender_id])
+            
+            # Inject year, month, day partitions if date columns exist
+            date_col = None
+            if 'origination_date' in column_names:
+                date_col = 'origination_date'
+            elif 'actual_payment_date' in column_names:
+                date_col = 'actual_payment_date'
+            
+            if date_col:
+                print(f"Injecting year, month, day partitions from {date_col} into table '{table_name}'...")
+                if 'year' not in column_names:
+                    self.con.execute(f"ALTER TABLE {table_name} ADD COLUMN year INTEGER")
+                    self.con.execute(f"UPDATE {table_name} SET year = EXTRACT(YEAR FROM CAST({date_col} AS DATE))")
+                if 'month' not in column_names:
+                    self.con.execute(f"ALTER TABLE {table_name} ADD COLUMN month INTEGER")
+                    self.con.execute(f"UPDATE {table_name} SET month = EXTRACT(MONTH FROM CAST({date_col} AS DATE))")
+                if 'day' not in column_names:
+                    self.con.execute(f"ALTER TABLE {table_name} ADD COLUMN day INTEGER")
+                    self.con.execute(f"UPDATE {table_name} SET day = EXTRACT(DAY FROM CAST({date_col} AS DATE))")
 
     def get_connection(self):
         return self.con
