@@ -6,7 +6,16 @@ from pathlib import Path
 # Add src to sys.path to import the package
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from loan_analyzer import DataLoader, DataValidation, LoanCalculation, LoanAudit
+from loan_analyzer import (
+    DataLoader, 
+    DataValidation, 
+    LoanCalculation, 
+    LoanAudit,
+    RiskMetrics,
+    ImpactMetrics,
+    CreditMetrics,
+    PricingMetrics
+)
 
 @pytest.fixture
 def sample_data_dir():
@@ -54,6 +63,39 @@ def test_full_pipeline(sample_data_dir):
     # Opening: 1000. Interest: 1000 * (12/1200) = 10. Cash: 200. Amort: 200 - 10 = 190. Closing: 1000 - 190 = 810.
     res = loader.con.execute("SELECT closing_principal FROM loan_state WHERE loan_id = 'L001' AND period_number = 2").fetchone()
     assert abs(res[0] - 810.0) < 0.01
+
+def test_metrics_system(sample_data_dir, tmp_path):
+    # 1. Setup
+    loader = DataLoader(sample_data_dir, lender_id="TEST_LENDER_001")
+    validator = DataValidation(loader)
+    calculator = LoanCalculation(validator)
+    calculator.run_all()
+    
+    output_dir = tmp_path / "analytics"
+    
+    # 2. Test Risk Metrics
+    risk = RiskMetrics(calculator)
+    risk_df = risk.run_metric("status_distribution", output_base_dir=output_dir)
+    assert not risk_df.empty
+    assert (output_dir / "risk_metrics" / "status_distribution").exists()
+    
+    # 3. Test Impact Metrics
+    impact = ImpactMetrics(calculator)
+    impact_df = impact.run_metric("monthly_lended", output_base_dir=output_dir)
+    assert not impact_df.empty
+    assert (output_dir / "impact_metrics" / "monthly_lended").exists()
+    
+    # 4. Test Credit Metrics
+    credit = CreditMetrics(calculator)
+    credit_df = credit.run_metric("grade_dist", output_base_dir=output_dir)
+    assert not credit_df.empty
+    assert (output_dir / "credit_metrics" / "grade_dist").exists()
+    
+    # 5. Test Pricing Metrics
+    pricing = PricingMetrics(calculator)
+    pricing_df = pricing.run_metric("pricing_risk", output_base_dir=output_dir)
+    assert not pricing_df.empty
+    assert (output_dir / "pricing_metrics" / "pricing_risk").exists()
 
 def test_audit_calculation_validation(sample_data_dir):
     loader = DataLoader(sample_data_dir)
