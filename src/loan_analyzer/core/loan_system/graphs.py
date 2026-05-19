@@ -77,8 +77,8 @@ class ChartFactory:
     def vintage_dpd_trend(df):
         if df is None or df.empty: return ChartFactory._to_json(go.Figure())
         
-        # Calculate DPD 30+ (Sum of 30-59, 60-89, 90+, and Write-off)
-        df['dpd_30_plus'] = df['pct_30_59'] + df['pct_60_89'] + df['pct_90_plus'] + df['pct_write_off']
+        # Calculate DPD 90+ (Sum of 90+ and Write-off)
+        df['dpd_90_plus_base'] = df['pct_90_plus'] + df['pct_write_off']
         
         fig = go.Figure()
         df['vintage'] = pd.to_datetime(df['vintage'])
@@ -86,17 +86,32 @@ class ChartFactory:
         
         for v in vintages[:5]: # Plot top 5 vintages
             v_df = df[df['vintage'] == v].sort_values('mob')
+            
+            # Ensure MOB starts at 0 and cumulative values
+            mob = [0] + v_df['mob'].tolist()
+            # If 0 is already in mob, avoid duplication but ensure value is handled
+            # Actually, standardizing to [0] + ... and making it cumulative
+            # ensures it starts at 0,0.
+            vals = [0] + v_df['dpd_90_plus_base'].tolist()
+            
+            # Make cumulative to reflect default seasoning
+            cum_vals = []
+            curr = 0
+            for val in vals:
+                curr = max(curr, val) # Cumulative default rate never drops
+                cum_vals.append(curr)
+
             fig.add_trace(go.Scatter(
-                x=v_df['mob'], 
-                y=v_df['dpd_30_plus'],
+                x=mob, 
+                y=cum_vals,
                 mode='lines+markers',
                 name=f'Vintage {v.strftime("%Y-%m")}'
             ))
             
         fig.update_layout(
-            title='DPD 30+ Rate by Months on Book (MOB)',
+            title='Cumulative DPD 90+ Rate by Months on Book (MOB)',
             xaxis_title='Months on Book (MOB)',
-            yaxis_title='DPD 30+ Rate (%)',
+            yaxis_title='Cumulative DPD 90+ Rate (%)',
             hovermode='closest'
         )
         return ChartFactory._to_json(fig)
