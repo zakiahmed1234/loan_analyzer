@@ -1,11 +1,9 @@
 IMPACT_METRICS = {
     "loan_use": {
-        "sql": "loan_use_monthly.sql",
-        "graph": "loan_analyzer.core.loan_system.graphs.ChartFactory.loan_use_monthly"
+        "sql": "loan_use_monthly.sql"
     },
     "location": {
-        "sql": "location_monthly.sql",
-        "graph": "loan_analyzer.core.loan_system.graphs.ChartFactory.location_monthly"
+        "sql": "location_monthly.sql"
     },
     "monthly_lended": {
         "sql": "monthly_lended.sql"
