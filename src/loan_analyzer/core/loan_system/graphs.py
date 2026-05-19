@@ -1,3 +1,28 @@
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+import json
+import datetime
+
+def sanitize_data(data):
+    """
+    Ensures data is JSON serializable by converting non-serializable types.
+    Explicitly converts numpy arrays and pandas Series to lists to avoid binary encoding.
+    """
+    if isinstance(data, dict):
+        return {k: sanitize_data(v) for k, v in data.items()}
+    elif isinstance(data, (list, tuple, set)):
+        return [sanitize_data(v) for v in data]
+    elif hasattr(data, 'tolist'): # Handle numpy arrays and pandas Series
+        return sanitize_data(data.tolist())
+    elif pd.isna(data) if not isinstance(data, (list, dict, str)) else False:
+        return None
+    elif isinstance(data, (pd.Timestamp, datetime.date, datetime.datetime)):
+        return data.isoformat()
+    elif isinstance(data, (int, float, str, bool)) or data is None:
+        return data
+    return str(data)
+
 class ChartFactory:
     @staticmethod
     def _to_json(fig):

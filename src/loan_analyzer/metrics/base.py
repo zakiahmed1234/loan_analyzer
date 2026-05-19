@@ -35,7 +35,7 @@ class BaseMetrics:
             raise ValueError(f"Metric '{metric_name}' not found in {self.category_name} metrics registry.")
 
         metric_config = self.registry[metric_name]
-        sql_file_name = metric_config if isinstance(metric_config, str) else metric_config["file"]
+        sql_file_name = metric_config["sql"] if isinstance(metric_config, dict) else metric_config
         sql_file = self.sql_base_path / sql_file_name
 
         with open(sql_file, 'r') as f:
@@ -102,3 +102,40 @@ class BaseMetrics:
         )
         
         return df
+        
+    def get_graph(self, metric_name, df):
+        """
+        Retrieves the graph for a metric by cross-referencing the registry and graphs.py.
+        Outputs the graph as a JSON string.
+        """
+        if metric_name not in self.registry or not isinstance(self.registry[metric_name], dict):
+            print(f"No entry or invalid config for metric '{metric_name}' in {self.category_name} registry.")
+            return None
+
+        metric_config = self.registry[metric_name]
+        graph_path = metric_config.get("graph")
+        
+        if not graph_path:
+            print(f"No graph mapping found for metric '{metric_name}' in {self.category_name} registry.")
+            return None
+
+        print(f"Resolving graph for {metric_name} using path: {graph_path}")
+
+        try:
+            # Dynamically resolve the path (e.g., 'loan_analyzer.core.loan_system.graphs.ChartFactory.status_distribution')
+            parts = graph_path.split('.')
+            module_path = ".".join(parts[:-2])
+            class_name = parts[-2]
+            method_name = parts[-1]
+
+            import importlib
+            module = importlib.import_module(module_path)
+            chart_class = getattr(module, class_name)
+            chart_method = getattr(chart_class, method_name)
+
+            # Execute and return JSON
+            fig_json = chart_method(df)
+            return fig_json
+        except Exception as e:
+            print(f"Error generating graph for {metric_name}: {e}")
+            return None
