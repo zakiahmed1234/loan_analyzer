@@ -27,25 +27,27 @@ pip install git+https://github.com/zakiahmed1234/loan_analyzer.git
 
 ## Quick Start
 
+We have synthetic-data in the repo for testing.
+
 ```python
-from loan_analyzer import DataLoader, DataValidation, LoanCalculation
-from generate_test_data import generate_data
+from loan_analyzer import DataLoader, DataValidation, LoanCalculation, LoanAudit, CreditMetrics
 
-# 1. Generate sample data
-generate_data("data")
-
-# 2. Load and Validate
-loader = DataLoader("data")
+# 1. Load data from the included synthetic dataset
+loader = DataLoader("sample_data/perfect")
 validator = DataValidation(loader)
 
-# 3. Run recursive amortization engine
+# 2. Run recursive amortization engine
 calculator = LoanCalculation(validator)
 calculator.run_all()
 
-# 4. Access computed states via DuckDB connection
-con = loader.get_connection()
-results = con.execute("SELECT * FROM loan_state LIMIT 5").df()
-print(results)
+# 3. Forensic Audit: Re-audit a specific loan to reconcile balance
+auditor = LoanAudit(calculator)
+print(auditor.audit_loan("LOAN_001", "2023-12-01"))
+
+# 4. Analytics: Generate Vintage DPD (Days Past Due) curve
+credit = CreditMetrics(calculator)
+df_dpd = credit.run_metric("vintage_delinquency")
+fig_json = credit.get_graph("vintage_delinquency", df_dpd)
 ```
 
 ---
