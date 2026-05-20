@@ -27,6 +27,31 @@ pip install git+https://github.com/zakiahmed1234/loan_analyzer.git
 
 ---
 
+## Quick Start
+
+```python
+from loan_analyzer import DataLoader, DataValidation, LoanCalculation
+from generate_test_data import generate_data
+
+# 1. Generate sample data
+generate_data("data")
+
+# 2. Load and Validate
+loader = DataLoader("data")
+validator = DataValidation(loader)
+
+# 3. Run recursive amortization engine
+calculator = LoanCalculation(validator)
+calculator.run_all()
+
+# 4. Access computed states via DuckDB connection
+con = loader.get_connection()
+results = con.execute("SELECT * FROM loan_state LIMIT 5").df()
+print(results)
+```
+
+---
+
 ## Project Structure
 
 ### Pipeline
@@ -49,12 +74,11 @@ loan_analyzer/
 │       │   ├── sql/            # Core SQL transformations (recursive CTEs)
 │       │   └── tests/          # Data validation and invariant tests
 │       ├── metrics/            # Multi-dimensional analytics modules
-│       │   ├── risk/           # Default rates, delinquency status
-│       │   ├── credit/         # Credit profiles, transitions
-│       │   ├── impact/         # Borrower delta, loan usage
-│       │   └── pricing/        # Yield curves, fee yields
-│       └── utils/              # Helper utilities (Hive archiving)
-├── docs/                       # Documentation
+│       ├── utils/              # Helper utilities (Hive archiving)
+│       └── __init__.py
+├── docs/                       # Detailed documentation guides
+├── demo.ipynb                  # End-to-end Jupyter walkthrough
+├── workflow.gif                # Pipeline execution animation
 ├── pyproject.toml              # Build configuration
 └── README.md
 ```
@@ -168,8 +192,9 @@ This enables deterministic audit tracing for all balance transitions.
 
 ## Infrastructure
 
-- Apache Hive-backed Parquet tables are used for data storage to support downstream auditability.  
-- SQL transformations are executed through a dialect-agnostic query layer to ensure compatibility across analytical warehouses, including AWS Athena and BigQuery.
+- **Engine**: Powered by **DuckDB** for high-performance, vectorized SQL execution and in-memory processing.
+- **Storage**: Results are archived to local **Hive-style partitioned structures** (CSV or Parquet) to support downstream auditability and high-scale analytical compatibility.
+- **SQL Dialect**: Transformations use DuckDB-optimized SQL while remaining compatible with standard analytical warehouses like AWS Athena and BigQuery.
 
 ---
 
