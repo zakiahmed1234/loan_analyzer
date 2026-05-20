@@ -81,8 +81,9 @@ auditor = LoanAudit(calculator)
 passed, report = auditor.validate_calculations()
 ```
 The `validate_calculations()` method executes tests in `src/loan_analyzer/core/tests/calculation_validation/` such as:
-- `test_sum_reconciliation.sql`: Ensuring the sum of interest, principal, and penalties equals the total cash received globally.
-- `test_global_principal_drift.sql`: Ensuring no principal is "lost" or "created" across all recursive steps.
+- `test_continuity.sql`: Ensuring there are no gaps or overlaps in the loan state timeline.
+- `test_monotonicity.sql`: Ensuring that principal doesn't increase without a corresponding transaction.
+- `test_non_negative.sql`: Ensuring balances never drop below zero.
 
 ---
 

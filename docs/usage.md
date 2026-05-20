@@ -44,6 +44,8 @@ Iterates through all `test_*.sql` files in the `src/loan_analyzer/core/tests/dat
     - `test_reconciliation.sql`: Payment components sum to the total payment.
     - `test_terminal_states.sql`: Loans marked as 'Paid Off' have a zero balance.
     - `test_cash_monotonicity.sql`: Total cash received never decreases.
+    - `test_negative_owed.sql`: Checks for negative amounts owed in the schedule.
+    - `test_data_types.sql`: Basic schema type verification.
 
 ```python
 from loan_analyzer import DataValidation
@@ -68,6 +70,8 @@ Computes the recursive monthly state for every loan. This is the foundation for 
     - `cash_received`: Total payments received in the period.
     - `amortization`: Portion of cash applied to principal.
     - `closing_principal`: Balance at end of month.
+    - `penalty_occurred`: Penalties incurred during the period.
+    - `write_off_occurred`: Principal reduction due to write-offs.
     - `computed_at`: Timestamp of when the record was generated.
 
 #### `run_delinquency()`
@@ -184,5 +188,9 @@ def generate_monthly_report(data_folder, lender_id="LENDER_001", output_format="
     risk_runner.run_metric("defaults", output_base_dir="analytics", output_format=output_format)
 
 # Run for a specific batch
-generate_monthly_report("FakeData/robust", "LENDER_GOLD_001", "csv")
+generate_monthly_report("demo_data", "LENDER_GOLD_001", "csv")
 ```
+
+---
+
+## 7. Visualization: `ChartFactory`
