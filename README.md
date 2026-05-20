@@ -1,8 +1,6 @@
 # Loan Analyzer
 
 A SQL-based financial state machine for reconstructing time-series loan histories using recursive amortization, with correctness enforced via SQL-defined invariants.
-![Demo](workflow.gif)
-![Walkthrough](demo.ipynb)
 
 The system ingests:
 
@@ -192,9 +190,8 @@ This enables deterministic audit tracing for all balance transitions.
 
 ## Infrastructure
 
-- **Engine**: Powered by **DuckDB** for high-performance, vectorized SQL execution and in-memory processing.
-- **Storage**: Results are archived to local **Hive-style partitioned structures** (CSV or Parquet) to support downstream auditability and high-scale analytical compatibility.
-- **SQL Dialect**: Transformations use DuckDB-optimized SQL while remaining compatible with standard analytical warehouses like AWS Athena and BigQuery.
+- Apache Hive-backed Parquet tables are used for data storage to support downstream auditability.  
+- SQL transformations are executed through a dialect-agnostic query layer to ensure compatibility across analytical warehouses, including AWS Athena and BigQuery.
 
 ---
 
