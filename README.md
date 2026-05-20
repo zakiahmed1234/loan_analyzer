@@ -1,43 +1,21 @@
 # Loan Analyzer
 
-A lightweight, SQL-powered engine for validating loan data and computing delinquency metrics using DuckDB. It is designed to transform raw CSV loan data into auditable, time-series financial states. The engine takes in 
+A SQL-based financial state machine for reconstructing time-series loan histories using recursive amortization, with correctness enforced via SQL-defined invariants. The system ingests:
 
-    - Borrower data
-    - Loan data
-    - collateral data
-    - colateral valuation data
-    - Scheduled payment data
-    - Actual payment data
+- Borrower data  
+- Loan data  
+- Collateral data  
+- Collateral valuation data  
+- Scheduled payment data  
+- Actual payment data  
 
-and calculates how the amount owed over time changes for each loan via complex amortization calculations.
+and computes the evolution of outstanding loan balances over time, accounting for missed payments, penalties, and compounding interest.
 
-## Project Structure
-
-The project follows a structured layout for modularity and scalability:
-
-```text
-loan_analyzer/
-├── src/
-│   └── loan_analyzer/
-│       ├── core/
-│       │   ├── loan_system/    # Core Python logic (DataLoader, Calculation, etc.)
-│       │   ├── sql/            # Core SQL transformations (Recursive CTEs)
-│       │   └── tests/          # Data validation invariant tests
-│       ├── metrics/            # Multi-dimensional analytics modules
-│       │   ├── risk/           # Default rates, delinquency status
-│       │   ├── credit/         # Credit profiles, transitions
-│       │   ├── impact/         # Borrower delta, loan use
-│       │   └── pricing/        # Yield curves, fee yields
-│       └── utils/              # Helper utilities (Hive archiving)
-├── docs/                       # Documentation
-├── sqlmetricsnew/              # Experimental/New SQL metrics
-├── pyproject.toml              # Build configuration
-└── README.md
-```
+---
 
 ## Installation
 
-You can install the package directly from GitHub:
+The package can be installed directly from GitHub:
 
 ```bash
 pip install git+https://github.com/zakiahmed1234/loan_analyzer.git
@@ -45,101 +23,159 @@ pip install git+https://github.com/zakiahmed1234/loan_analyzer.git
 
 ---
 
-## Core Package Reference
+## Project Structure
 
-The package is modularized into specialized classes within the `loan_analyzer` package.
+### Pipeline
 
-### 1. `DataLoader`
-Handles data ingestion from CSVs into an in-memory DuckDB instance and manages Hive-style partitioning for raw inputs.
+Raw Data Ingestion  
+→ Input Validation (Pre-Calculation Invariants)  
+→ Recursive Amortization Engine (State Reconstruction)  
+→ Output Validation (Post-Calculation Invariants)  
+→ Audit Reconciliation Layer  
+→ Metrics Computation Layer  
 
-#### `__init__(directory_path, lender_id=None, connection=None, output_base_dir=None, output_format="csv")`
-- **directory_path**: Directory containing the required CSV files.
-- **lender_id**: Identifier for the lender (used for Hive partitioning).
-- **connection**: (Optional) An existing DuckDB connection.
-- **output_base_dir**: (Optional) Base directory for Hive archiving.
-- **output_format**: (Optional) 'csv' or 'parquet' (default: 'csv').
+### Codebase Structure
 
----
-
-### 2. `DataValidation`
-Runs a suite of SQL-based invariant tests to ensure data integrity.
-
-#### `validate_all()`
-Runs all tests in `src/loan_analyzer/core/tests/data_validation/`.
-- **Returns**: A pandas DataFrame containing the results.
-
----
-
-### 3. `LoanCalculation`
-The execution engine for financial business logic.
-
-#### `run_all()`
-Executes both `run_loan_state()` (Recursive Balance Engine) and `run_delinquency()` (Delinquency Waterfall).
-
----
-
-### 4. `Multi-Dimensional Analytics`
-Specialized runners for various financial metrics. Each runner manages a registry of SQL-based metrics.
-
-- **`RiskMetrics`**: Defaults, LGD, DPD status distribution.
-- **`CreditMetrics`**: Credit profiles, score progression, vintage delinquency.
-- **`ImpactMetrics`**: Borrower delta, loan use, geographic distribution.
-- **`PricingMetrics`**: Yield curves, interest vintage, pricing risk.
-
----
-
-### 5. `LoanAudit`
-The **Forensic Audit Tool**. Provides a line-item reconciliation of a loan's principal change and validates calculation logic.
-
----
-
-## Advanced Usage Example
-
-```python
-from loan_analyzer import (
-    DataLoader, 
-    DataValidation, 
-    LoanCalculation, 
-    LoanAudit,
-    RiskMetrics,
-    ImpactMetrics
-)
-
-# 1. Setup Data Environment
-loader = DataLoader("FakeData/robust", lender_id="LENDER_001")
-
-# 2. Perform Health Check
-validator = DataValidation(loader)
-report = validator.validate_all()
-
-# 3. Generate Financial Models
-calculator = LoanCalculation(validator, output_format="csv")
-calculator.run_all()
-
-# 4. Forensic Investigation & Validation
-auditor = LoanAudit(calculator)
-audit_passed, audit_report = auditor.validate_calculations()
-print(auditor.audit_loan("loan-uuid-123", "2024-01-01"))
-
-# 5. Run Analytics
-risk_runner = RiskMetrics(calculator)
-risk_runner.run_metric("defaults", output_base_dir="analytics")
+```text
+loan_analyzer/
+├── src/
+│   └── loan_analyzer/
+│       ├── core/
+│       │   ├── loan_system/    # Core Python logic (DataLoader, calculation, etc.)
+│       │   ├── sql/            # Core SQL transformations (recursive CTEs)
+│       │   └── tests/          # Data validation and invariant tests
+│       ├── metrics/            # Multi-dimensional analytics modules
+│       │   ├── risk/           # Default rates, delinquency status
+│       │   ├── credit/         # Credit profiles, transitions
+│       │   ├── impact/         # Borrower delta, loan usage
+│       │   └── pricing/        # Yield curves, fee yields
+│       └── utils/              # Helper utilities (Hive archiving)
+├── docs/                       # Documentation
+├── pyproject.toml              # Build configuration
+└── README.md
 ```
 
-## CLI Usage
+---
 
-You can run the full pipeline using `main.py`:
+## Amortization
 
-```bash
-# Defaults to CSV output
-python main.py FakeData/robust --lender-id LENDER_GOLD_001 --output analytics
+Amortization is defined as the portion of a loan payment that reduces the outstanding principal balance.
 
-# Specify Parquet output
-python main.py FakeData/robust --format parquet
+In each period, payments are applied in the following order:
+
+1. accrued interest  
+2. penalties (if any)  
+3. remaining balance applied to principal reduction  
+
+Formally, amortization is computed as:
+
+```text
+amortization =
+    max(
+        cash_received
+        - interest_accrued
+        - penalties,
+        0
+    )
 ```
 
-## SQL Resources
-The core logic is modularized in `src/loan_analyzer/core/sql/`. You can find the recursive CTEs for balance tracking and the cumulative window functions for delinquency there.
+The amortization amount is subtracted from the opening principal to determine the closing principal for the period, adjusted for any write-offs.
 
-## License
-MIT
+---
+
+## Invariants and Auditability
+
+All input and output data must satisfy a set of financial invariants that ensure correctness, consistency, and auditability. These invariants are defined in SQL to maintain modularity and enforce deterministic behavior across the pipeline.
+
+---
+
+## Input Invariants
+
+All input datasets must satisfy the following invariants before loan reconstruction is performed:
+
+- **Identifier uniqueness**  
+  All primary identifiers (loan IDs, borrower IDs, payment IDs) are globally unique within their respective domains.
+
+- **Schema conformity**  
+  Input datasets conform to the expected schema definitions, including required column names and structural constraints.
+
+- **Data type integrity**  
+  All fields satisfy their expected data types (e.g. numeric, timestamp, categorical).
+
+- **Cash flow reconciliation**  
+  Payment cash flows must reconcile exactly such that:
+
+```text
+cash_received
+    = interest_paid
+    + principal_paid
+    + fees_paid
+    + penalties_paid
+    + unapplied_cash
+```
+
+- **Absorbing terminal states**  
+  Terminal loan states, including `paid_off`, `defaulted`, and `written_off`, are absorbing and irreversible across future timesteps.
+
+- **Monotonic cumulative cash flow**  
+  Total cumulative cash paid for a loan is monotonically nondecreasing over time.
+
+- **Nonnegative balance constraints**  
+  Outstanding balances, accrued interest, fees, and penalties remain nonnegative.
+
+- **Temporal consistency**  
+  Payment dates occur on or after the corresponding loan origination date.
+
+---
+
+## Output Invariants
+
+The calculated loan state output must satisfy the following invariants:
+
+- **Temporal balance continuity**  
+  For every loan and timestep `t`:
+
+```text
+OpeningPrincipal(t + 1) = ClosingPrincipal(t)
+```
+
+- **Nonnegative balance constraints**  
+  Principal, accrued interest, and fee balances remain nonnegative throughout the reconstructed timeline.
+
+- **Monotonic principal reduction**  
+  In the absence of penalties, capitalizations, or additional drawdowns, outstanding principal decreases monotonically over time.
+
+---
+
+## Audit Reconciliation
+
+Given a loan identifier and observation date, the system provides a human-readable reconciliation between opening and closing balances, including the contribution of:
+
+- principal payments  
+- accrued interest  
+- fees  
+- penalties  
+- write-offs  
+- other balance adjustments  
+
+This enables deterministic audit tracing for all balance transitions.
+
+---
+
+## Infrastructure
+
+- Apache Hive-backed Parquet tables are used for data storage to support downstream auditability.  
+- SQL transformations are executed through a dialect-agnostic query layer to ensure compatibility across analytical warehouses, including AWS Athena and BigQuery.
+
+---
+
+## Metrics
+
+The system provides 21 analytical metrics across four categories:
+
+- risk  
+- yield  
+- pricing  
+- borrower impact  
+
+Selected metrics include time-series visualizations and distributional summaries to support downstream portfolio analysis and monitoring.
