@@ -27,7 +27,7 @@ pip install git+https://github.com/zakiahmed1234/loan_analyzer.git
 
 ## Quick Start
 
-We have synthetic-data in the repo for testing.
+Use ```synthetic-data``` in the repo for testing.
 
 ```python
 from loan_analyzer import DataLoader, DataValidation, LoanCalculation, LoanAudit, CreditMetrics
