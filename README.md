@@ -2,6 +2,7 @@
 
 A SQL-based financial state machine for reconstructing time-series loan histories using recursive amortization, with correctness enforced via SQL-defined invariants.
 ![Demo](workflow.gif)
+![Walkthrough](demo.ipynb)
 
 The system ingests:
 
