@@ -1,10 +1,22 @@
 # Loan Analyzer
 
-A SQL-based financial state machine for reconstructing time-series loan histories using recursive amortization, with correctness enforced via SQL-defined invariants.
+A SQL-based loan history machine, with correctness enforced via SQL-defined invariants.
 ![Demo](workflow.gif)
 ![Walkthrough](demo.ipynb)
 
-## Features
+## Introduction
+### Problem
+Accurately modelling a loan's full history is essential to understanding its future. A single missed payment may seem alarming in isolation, but observing the borrower's prior behaviour - such as repeated delays due to late salary payments - provides human context that a snapshot view can't capture. Further, complete histories are also critical for compliance and auditability, ensuring that every payment and balance can be reconstructed and verified, and for cohort level analyses, enabling comparisons of regions or borrower segments.
+
+### Difficulties
+
+Scheduled loan payments are often just modelled as fixed payments at the start of each month. However, real world cashflows are irregular: borrowers may overpay, underpay, or pay late. Defining when a payment is "complete" requires rules for partial, early, or late payments, and handling these consistently is non-trivial.
+
+This problem is made worse because although loans are paid as a fixed amount every month, this is split between a principal and an interest payment. The size of the interest payment depends on how much principal is left. At the beginning of your loan most of your money is going towards interest payments, whereas at the end you are mostly paying off your principal. This requires performing complex recursive calculations month on month.
+
+Further, data is often missing, unordered, or doesn't add up correctly, providing further problems.
+
+## Implementation
 
 - Recursive amortization engine using SQL CTEs
 - Deterministic balance reconstruction
